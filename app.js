@@ -4,9 +4,8 @@ const path = require('path')
 const cookieParser = require('cookie-parser')
 const logger = require('morgan')
 
-let indexRouter = router.get('/', function(req, res, next) {
-  listEvents(auth)
-  res.render('index', { title: 'Express' })
+let indexRouter = router.get('/getCalendar', function(req, res, next) {
+  getCalendar()
 })
 
 // https://developers.google.com/calendar/quickstart/nodejs
@@ -16,11 +15,13 @@ const {google} = require('googleapis')
 
 const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
 const TOKEN_PATH = 'token.json' // store auth token on disk, not too bad since we control access via HTTP Basic auth
-fs.readFile('credentials.json', (err, content) => {
-  if (err) return console.log('Error loading client secret file:', err)
-  // Authorize a client with credentials, then call the Google Calendar API.
-  authorize(JSON.parse(content), listEvents)
-})
+function getCalendar() {
+  fs.readFile('credentials.json', (err, content) => {
+    if (err) return console.log('Error loading client secret file:', err)
+    // Authorize a client with credentials, then call the Google Calendar API.
+    authorize(JSON.parse(content), listEvents)
+  })
+}
 function authorize(credentials, callback) {
   const {client_secret, client_id, redirect_uris} = credentials.installed
   const oAuth2Client = new google.auth.OAuth2(

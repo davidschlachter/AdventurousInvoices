@@ -8,6 +8,18 @@
 <body>
   <h1>Express</h1>
   <p>Welcome to Express</p>
+  
+  <script>
+      var xmlhttp = new XMLHttpRequest();
+      xmlhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+          displayProjects(JSON.parse(this.responseText));
+        }
+      };
+      xmlhttp.open('GET', 'getCalendar');
+      xmlhttp.send();
+  </script>
+  
 </body>
 
 </html>
