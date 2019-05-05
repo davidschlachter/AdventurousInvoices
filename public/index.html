@@ -1,25 +1,91 @@
 <html>
 
 <head>
-  <title>Express</title>
-  <link rel="stylesheet" href="/stylesheets/style.css">
+  <title>Adventurous Invoices</title>
+  <link rel="stylesheet" href="stylesheets/style.css">
+  <script src="javascripts/jquery-3.4.1.min.js"></script>
 </head>
 
 <body>
-  <h1>Express</h1>
-  <p>Welcome to Express</p>
+  <h1>Adventurous Invoices</h1>
+  <p id="errors"></p>
+  <h2>All Clients</h2>
   
-  <script>
-      var xmlhttp = new XMLHttpRequest();
-      xmlhttp.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
-          displayProjects(JSON.parse(this.responseText));
-        }
-      };
-      xmlhttp.open('GET', 'getCalendar');
-      xmlhttp.send();
-  </script>
+  <table id=clientsTable></table>
+  
+  <h2>Add Client</h2>
+  <form id="addclientform">
+    <label>Name</label>
+    <input type="text" id="clientName" value="">
+    <div id="emails">
+      <div id="email1row"><label for="email_1">Email 1</label><input type="text" id="email_1"></div>
+    </div>
+    <a href="#" id="addemail">Add email</a><br><br>
+    <button type="cancel">Cancel</button>
+    <button type="submit">Save Client</button>
+  </form>
+  
   
 </body>
+
+<script>
+  $( document ).ready(function() {
+    
+    $.get("getAuth", function(auth) {
+      if (auth.authenticated !== true) {
+        $("#errors").text("Error: not signed in to Google!")
+        $("#errors").show()
+      }
+    })
+    
+    $.get("getClients", function(results) {
+      console.log(results)
+      let tableText = ""
+      let currentClient = ""
+      let currentrowSpan = 0
+      for (let i=0;i<results.length;i++) {
+        if (currentClient !== results[i].name) {
+          currentClient = results[i].name
+          for (let j=0;j<results.length;j++) {
+            if (results[j].name === currentClient) currentrowSpan++
+          }
+          tableText += '<tr><td rowspan='+currentrowSpan+'>'+results[i].name+'</td><td>'+results[i].address+'</td></tr>'
+        } else {
+          tableText += '<tr><td>'+results[i].address+'</td></tr>'
+        }
+      }
+      $("#clientsTable").append(tableText)
+    })
+    
+    $("#addemail").click(function() {
+      let currentRows = $("#emails input").length
+      let row = currentRows + 1
+      $("#emails").append("<div id=\"email"+row+"row\"><label for=\"email_"+row+"\">Email "+row+"</label><input type=\"text\" id=\"email_"+row+"\"><button type=\"button\" onclick=\"removeThisRow("+row+")\">x</button></div>")
+    })
+
+    $("#addclientform").submit(function() {
+      clientData = {}
+      clientData.name = $("#clientName").val()
+      clientData.emails = []
+      $("#emails div").each(function(row) {
+        clientData.emails.push( $("#email_"+(row+1)).val() )
+      })
+      $.ajax({
+        type: "POST",
+        url: "addClient",
+        data: clientData,
+        success: function() {
+          console.log("Submitted new client data")
+        },
+        dataType: "json"
+      })
+    });
+    
+  })
+  
+  function removeThisRow(id) {
+    $("#email"+id+"row").remove()
+  }
+</script>
 
 </html>
