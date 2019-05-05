@@ -9,6 +9,8 @@ const readline = require('readline')
 const {google} = require('googleapis')
 const mysql = require('mysql')
 
+const config = require('./config')
+
 let app = express()
 app.use('/', router)
 
@@ -21,10 +23,10 @@ app.use( bodyParser.urlencoded({ extended: true }) )
 app.use(express.static(path.join(__dirname, 'public')))
 
 const connection = mysql.createConnection({
-  host     : '192.168.4.228',
-  user     : 'invoices',
-  password : 'pJS7@9IDYVo0r$yk05',
-  database : 'invoices'
+  host     : config.mysql.host,
+  user     : config.mysql.user,
+  password : config.mysql.password,
+  database : config.mysql.database
 })
 connection.connect()
 

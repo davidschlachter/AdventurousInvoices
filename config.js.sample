@@ -1,0 +1,8 @@
+let config = {}
+
+config.mysql.host = '192.168.4.228'
+config.mysql.user = 'invoices'
+config.mysql.password = 'password'
+config.mysql.database = 'invoices'
+
+module.exports = config
