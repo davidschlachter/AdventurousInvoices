@@ -39,17 +39,18 @@
     })
     
     $.get("getClients", function(results) {
-      console.log(results)
       let tableText = ""
       let currentClient = ""
       let currentrowSpan = 0
       for (let i=0;i<results.length;i++) {
+        console.log(results)
         if (currentClient !== results[i].name) {
           currentClient = results[i].name
+          currentrowSpan = 0
           for (let j=0;j<results.length;j++) {
             if (results[j].name === currentClient) currentrowSpan++
           }
-          tableText += '<tr><td rowspan='+currentrowSpan+'>'+results[i].name+'</td><td>'+results[i].address+'</td></tr>'
+          tableText += '<tr><td rowspan='+currentrowSpan+'><a href="showClient?clientID='+results[i].client+'">'+results[i].name+'</a></td><td>'+results[i].address+'</td></tr>'
         } else {
           tableText += '<tr><td>'+results[i].address+'</td></tr>'
         }
@@ -75,7 +76,7 @@
         url: "addClient",
         data: clientData,
         success: function() {
-          console.log("Submitted new client data")
+          location.reload()
         },
         dataType: "json"
       })

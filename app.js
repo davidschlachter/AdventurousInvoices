@@ -58,6 +58,7 @@ router.get('/getClients', function(req, res, next) {
 })
 router.get('/getEvents', listEvents)
 router.post('/addClient', bodyParser.urlencoded({ extended: false }), addClient)
+router.get('/showClient', showClient)
 
 // https://developers.google.com/calendar/quickstart/nodejs
 const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
@@ -121,11 +122,25 @@ function addClient(req, res, next) {
   connection.query('INSERT INTO clients SET ?', {name: req.body.name}, function (error, results, fields) {
     if (error) throw error
     let clientID = results.insertId
-    for (let i=0; i<req.body['emails[]'].length; i++) {
-      connection.query('INSERT INTO emails SET ?', {client: clientID, address: req.body['emails[]'][i]}, function (error, results, fields) {if (error) throw error})
+    if (typeof req.body['emails[]'] === "string") {
+      connection.query('INSERT INTO emails SET ?', {client: clientID, address: req.body['emails[]']}, function (error, results, fields) {
+        if (error) throw error
+        res.sendStatus(200)
+      })
+    } else {
+      for (let i=0; i<req.body['emails[]'].length; i++) {
+        connection.query('INSERT INTO emails SET ?', {client: clientID, address: req.body['emails[]'][i]}, function (error, results, fields) {
+          if (error) throw error
+          if (i - 1 === req.body['emails[]'].length) res.sendStatus(200)
+        })
+      }
     }
   })
+}
+
+function showClient(req, res, next) {
   res.sendStatus(200)
+  
 }
 
 
