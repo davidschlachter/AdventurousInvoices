@@ -1,0 +1,45 @@
+<html>
+
+<head>
+  <title>Adventurous Invoices - Client</title>
+  <link rel="stylesheet" href="stylesheets/style.css">
+  <script src="javascripts/jquery-3.4.1.min.js"></script>
+  <script src="javascripts/nodep-date-input-polyfill.dist.js"></script>
+</head>
+
+<body>
+  <h1>Adventurous Invoices</h1>
+  <h2 id=clientNameH2></h2>
+  
+  <table id=clientsTable></table>
+
+  <h3>Events between:</h3>
+  <input id=startdate type="date"><br>
+  <input id=enddate type="date"><br>
+  
+  <h2>Previous invoices</h2>
+  
+  
+</body>
+
+<script>
+  const urlParams = new URLSearchParams(window.location.search)
+  const clientID = urlParams.get('clientID')
+  
+  $( document ).ready(function() {
+    
+    $.get("getClient?clientID="+clientID, function(client) {
+      console.log(client)
+      $("#clientNameH2").text(client[0].name)
+    })
+    
+    today = new Date()
+    $("#enddate").val(today.toISOString().split('T')[0])
+    let twoWeeksAgo = new Date(new Date().setDate(today.getDate() - 14))
+    $("#startdate").val(twoWeeksAgo.toISOString().split('T')[0])
+    
+  })
+  
+</script>
+
+</html>

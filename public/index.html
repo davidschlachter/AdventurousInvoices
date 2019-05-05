@@ -50,7 +50,7 @@
           for (let j=0;j<results.length;j++) {
             if (results[j].name === currentClient) currentrowSpan++
           }
-          tableText += '<tr><td rowspan='+currentrowSpan+'><a href="showClient?clientID='+results[i].client+'">'+results[i].name+'</a></td><td>'+results[i].address+'</td></tr>'
+          tableText += '<tr><td rowspan='+currentrowSpan+'><a href="showClient.html?clientID='+results[i].client+'">'+results[i].name+'</a></td><td>'+results[i].address+'</td></tr>'
         } else {
           tableText += '<tr><td>'+results[i].address+'</td></tr>'
         }

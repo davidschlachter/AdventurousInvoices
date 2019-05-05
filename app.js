@@ -50,15 +50,20 @@ router.get('/getAuth', function(req, res, next) {
   }
 })
 router.get('/getClients', function(req, res, next) {
-  console.log("getClients")
   connection.query('SELECT * FROM clients JOIN emails ON clients.id = emails.client', function (error, results, fields) {
+    if (error) throw error
+      res.json(results)
+  })
+})
+router.get('/getClient', function(req, res, next) {
+  connection.query('SELECT * FROM clients JOIN emails ON clients.id = emails.client WHERE client = '+req.query.clientID+';', function (error, results, fields) {
     if (error) throw error
       res.json(results)
   })
 })
 router.get('/getEvents', listEvents)
 router.post('/addClient', bodyParser.urlencoded({ extended: false }), addClient)
-router.get('/showClient', showClient)
+router.get('/getEvents', bodyParser.urlencoded({ extended: false }), getEvents)
 
 // https://developers.google.com/calendar/quickstart/nodejs
 const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
@@ -138,7 +143,7 @@ function addClient(req, res, next) {
   })
 }
 
-function showClient(req, res, next) {
+function getEvents(req, res, next) {
   res.sendStatus(200)
   
 }
