@@ -17,3 +17,13 @@ a {
 	font-family: Consolas, Monaco, monospace;
 	white-space: pre;
 }
+
+table {
+	border-collapse: collapse;
+	border-bottom: 1px solid gray;
+}
+
+.clientFirstRow > td {
+	border-top: 1px solid gray;
+	padding: 0.3em;
+}
