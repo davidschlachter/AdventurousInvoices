@@ -12,3 +12,8 @@ a {
 	border: 3px solid red;
 	display: none;
 }
+
+#invoiceTable {
+	font-family: Consolas, Monaco, monospace;
+	white-space: pre;
+}

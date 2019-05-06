@@ -61,7 +61,6 @@ router.get('/getClient', function(req, res, next) {
       res.json(results)
   })
 })
-router.get('/getEvents', listEvents)
 router.post('/addClient', bodyParser.urlencoded({ extended: false }), addClient)
 router.get('/getEvents', bodyParser.urlencoded({ extended: false }), getEvents)
 
@@ -144,8 +143,21 @@ function addClient(req, res, next) {
 }
 
 function getEvents(req, res, next) {
-  res.sendStatus(200)
+  let startDate = new Date(req.query.startDate+"Z"+req.query.offset)
+  let endDate = new Date(req.query.endDate+"Z"+req.query.offset)
   
+  console.log(req.query)
+  
+  const calendar = google.calendar({version: 'v3', auth})
+  let a = calendar.events.list({
+    calendarId: 'primary',
+    timeMin: startDate.toISOString(),
+    timeMax: endDate.toISOString(),
+    singleEvents: true,
+    orderBy: 'startTime',
+  }).then(function(response){
+    res.json(response.data.items)
+  })
 }
 
 

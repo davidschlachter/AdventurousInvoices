@@ -5,6 +5,7 @@
   <link rel="stylesheet" href="stylesheets/style.css">
   <script src="javascripts/jquery-3.4.1.min.js"></script>
   <script src="javascripts/nodep-date-input-polyfill.dist.js"></script>
+  <script src="javascripts/moment-2.24.0.min.js"></script>
 </head>
 
 <body>
@@ -18,6 +19,8 @@
   <input id=startdate type="date"><br>
   <input id=enddate type="date"><br>
   
+  <p id=invoiceTable></p>
+  
   <h2>Previous invoices</h2>
   
   
@@ -26,11 +29,14 @@
 <script>
   const urlParams = new URLSearchParams(window.location.search)
   const clientID = urlParams.get('clientID')
+  let client = {}
+  let feeRate = 16.0
   
   $( document ).ready(function() {
     
-    $.get("getClient?clientID="+clientID, function(client) {
-      console.log(client)
+    $.get("getClient?clientID="+clientID, function(res) {
+      console.log(res)
+      client = res
       $("#clientNameH2").text(client[0].name)
       let emailAddresses = ""
       for (let i=0;i<client.length;i++) {
@@ -45,7 +51,75 @@
     let twoWeeksAgo = new Date(new Date().setDate(today.getDate() - 14))
     $("#startdate").val(twoWeeksAgo.toISOString().split('T')[0])
     
+    $("#startdate").change(function() {
+      getEvents($("#startdate").val(), $("#enddate").val())
+    })
+    $("#enddate").change(function() {
+      getEvents($("#startdate").val(), $("#enddate").val())
+    })
+    
+    getEvents($("#startdate").val(), $("#enddate").val())
+    
   })
+  
+  function getEvents(startDate, endDate) {
+    console.log(startDate, endDate)
+    let offset = -(new Date().getTimezoneOffset() / 60)
+    $.get("getEvents?startDate="+startDate+"&endDate="+endDate+"&offset="+offset, function(events) {
+      showEvents(events)
+    })
+  }
+  
+  function showEvents(events) {
+    let eventsText  = '<span className="summaryHead">Date         Hours           Time (h)  Amount</span><br/>'
+    eventsText += '<span>--------------------------------------------------<br/></span>'
+    let amountsTotal = 0
+    let hoursTotal = 0
+    for (let i=0; i<events.length; i++) {
+      if (typeof(events[i].attendees) !== 'object') continue
+      if (events[i].attendees.length === 0) continue
+      isInvited = false
+      for (let j=0; j<events[i].attendees.length; j++) {
+        for (let k=0; k < client.length; k++) {
+          if (events[i].attendees[j].email === client[k].address) isInvited = true
+        }
+      }
+      if (isInvited === true) {
+        console.log(events[i])
+        // Quoted roughly from AdventureInvoicing/Invoices/views/CalendarFetcher.js
+        if (typeof events[i].start.dateTime === 'string') {
+          start = new moment(events[i].start.dateTime)
+          endTime = new moment(events[i].end.dateTime).format('HH:mm')
+          startHour = start.format('HH:mm')
+          amountNumber = ((moment(events[i].end.dateTime).valueOf() - moment(events[i].start.dateTime).valueOf()) / (1000*3600))*feeRate
+          time = (amountNumber / feeRate).toFixed(2)
+          time = time.padStart(6, ' ').replace('.00', '   ')
+        } else if (typeof events[i].start.date === 'string') {
+          start = new moment(events[i].start.date)
+          amountNumber = 24*feeRate
+          time = ' 24.00'
+          endTime = '00:00'
+          startHour = '00:00'
+          startHour = '00:00'
+        } else {
+          console.log("Error: couldn't parse date")
+          continue
+        }
+        if (startHour.charAt(0) === '0') startHour = ' ' + startHour.substr(1, startHour.length-1)
+        if (endTime.charAt(0) === '0') endTime = ' ' + endTime.substr(1, endTime.length-1)
+        rate = "$" + feeRate.toFixed(2)
+        amount = ""
+        amount = "$ " + amountNumber.toFixed(2).padStart(6, ' ').replace('.00', '   ')
+        amount = amount.replace('.00', '   ')
+        amountsTotal = amountsTotal + amountNumber
+        hoursTotal = hoursTotal + (amountNumber / feeRate)
+        eventsText += '<span id='+events[i].eventId+'>'+start.format('ddd MMM DD')+'   '+startHour+' – '+endTime+'   '+time+'       '+amount+'<br/></span>'
+      }
+    }
+    eventsText += "<span>--------------------------------------------------<br/></span>"
+    eventsText += '<span>                    Total:   '+hoursTotal.toFixed(2).padStart(6, ' ').replace('.00', '   ')+'       $'+amountsTotal.toFixed(2).padStart(7, ' ')+'</span><br/>'
+    $("#invoiceTable").html(eventsText)
+  }
   
 </script>
 
