@@ -10,6 +10,7 @@
 <body>
   <h1>Adventurous Invoices</h1>
   <h2 id=clientNameH2></h2>
+  <p id=emails>Emails: </p>
   
   <table id=clientsTable></table>
 
@@ -31,6 +32,12 @@
     $.get("getClient?clientID="+clientID, function(client) {
       console.log(client)
       $("#clientNameH2").text(client[0].name)
+      let emailAddresses = ""
+      for (let i=0;i<client.length;i++) {
+        emailAddresses += client[i].address
+        if ((i+1) !== client.length) emailAddresses += ", "
+      }
+      $("#emails").append(emailAddresses)
     })
     
     today = new Date()
