@@ -133,8 +133,8 @@ function newInvoice(req, res, next) {
   let toString = "To: "
   let clientName = ""
   for (let i=0; i<req.body.emails.length; i++) {
-    if (typeof req.body.emails[i].address !== "undefined" && typeof req.body.emails[i].name !== "undefined") {
-      toString += '"' + req.body.emails[i].name + '" <' + req.body.emails[i].address + '>'
+    if (typeof req.body.emails[i].address !== "undefined") {
+      toString += '<' + req.body.emails[i].address + '>'
       if ((i+1) !== req.body.emails.length) toString += ', '
       clientName = req.body.emails[i].name
     }
