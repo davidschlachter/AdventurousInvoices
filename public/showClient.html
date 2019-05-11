@@ -9,21 +9,25 @@
 </head>
 
 <body>
-  <h1>Adventurous Invoices</h1>
-  <h2 id=clientNameH2></h2>
-  <p id=emails>Emails: </p>
+  <main>
+    <h1>Adventurous Invoices</h1>
+    <h2 id=clientNameH2></h2>
+    <p id=emails>Emails: </p>
   
-  <table id=clientsTable></table>
+    <table id=clientsTable></table>
 
-  <h3>Events between:</h3>
-  <input id=startdate type="date"><br>
-  <input id=enddate type="date"><br>
+    <h3>Events between:</h3>
+    <input id=startdate type="date"><br>
+    <input id=enddate type="date"><br>
+
+    <p id=invoiceTable></p>
   
-  <p id=invoiceTable></p>
+    <div style="text-align:center;">
+      <button id=newinvoice type="button">Send to Drafts folder</button>
+    </div>
+    <h2>Previous invoices</h2>
   
-  <h2>Previous invoices</h2>
-  
-  
+  </main>
 </body>
 
 <script>
@@ -60,6 +64,11 @@
     
     getEvents($("#startdate").val(), $("#enddate").val())
     
+    $("#newinvoice").click(function() {
+      $("#newinvoice").attr("disabled", true)
+      newInvoice()
+    })
+    
   })
   
   function getEvents(startDate, endDate) {
@@ -67,6 +76,23 @@
     let offset = -(new Date().getTimezoneOffset() / 60)
     $.get("getEvents?startDate="+startDate+"&endDate="+endDate+"&offset="+offset, function(events) {
       showEvents(events)
+    })
+  }
+  
+  function newInvoice() {
+    data = {}
+    data.table = $("#invoiceTable").html()
+    data.startDate = $("#startdate").val()
+    data.endDate = $("#enddate").val()
+    data.emails = client
+    data.offset = -(new Date().getTimezoneOffset() / 60)
+    $.ajax({
+      type: "POST",
+      url: "newInvoice",
+      data: data,
+      success: function(data) {
+        console.log(data)
+      }
     })
   }
   

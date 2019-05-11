@@ -1,5 +1,7 @@
 let config = {}
 
+config.name = "My Name"
+config.email = "my@email.address"
 config.mysql.host = '192.168.4.228'
 config.mysql.user = 'invoices'
 config.mysql.password = 'password'

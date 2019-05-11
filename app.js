@@ -8,6 +8,7 @@ const fs = require('fs')
 const readline = require('readline')
 const {google} = require('googleapis')
 const mysql = require('mysql')
+const moment = require('moment')
 
 const config = require('./config')
 
@@ -62,10 +63,8 @@ router.get('/getClient', function(req, res, next) {
   })
 })
 router.post('/addClient', bodyParser.urlencoded({ extended: false }), addClient)
+router.post('/newInvoice', bodyParser.urlencoded({ extended: true }), newInvoice)
 router.get('/getEvents', bodyParser.urlencoded({ extended: false }), getEvents)
-
-// https://developers.google.com/calendar/quickstart/nodejs
-const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
 
 function getAuth() {
   let content = fs.readFileSync('credentials.json','utf8')
@@ -76,15 +75,27 @@ function authorize(credentials) {
   const {client_secret, client_id, redirect_uris} = credentials.installed
   const oAuth2Client = new google.auth.OAuth2(
       client_id, client_secret, redirect_uris[0])
+  // New authorization, just uncomment to use (hacky!)
+  //const authUrl = oAuth2Client.generateAuthUrl({
+  //    access_type: 'offline',
+  //    scope: ['https://www.googleapis.com/auth/calendar.readonly', 'https://www.googleapis.com/auth/gmail.compose'],
+  //  })
+  //console.log('Authorize this app by visiting this url:', authUrl)
   // Check if we have previously stored a token.
-  let token = fs.readFileSync('token.json','utf8')
+  let token = {}
+  try {
+    token = fs.readFileSync('token.json','utf8')
+  } catch {
+    return getAccessToken(oAuth2Client)
+  }
   oAuth2Client.setCredentials(JSON.parse(token))
   return oAuth2Client
 }
+// If not access token is present, run once from the console to save token, then quit and re-run
 function getAccessToken(oAuth2Client) {
   const authUrl = oAuth2Client.generateAuthUrl({
     access_type: 'offline',
-    scope: SCOPES,
+    scope: ['https://www.googleapis.com/auth/calendar.readonly', 'https://www.googleapis.com/auth/gmail.compose'],
   })
   console.log('Authorize this app by visiting this url:', authUrl)
   const rl = readline.createInterface({
@@ -115,6 +126,64 @@ function listEvents(req, res, next) {
     orderBy: 'startTime',
   })
   res.json(a.items)
+}
+
+function newInvoice(req, res, next) {
+  console.log(req.body)
+  let toString = "To: "
+  let clientName = ""
+  for (let i=0; i<req.body.emails.length; i++) {
+    if (typeof req.body.emails[i].address !== "undefined" && typeof req.body.emails[i].name !== "undefined") {
+      toString += '"' + req.body.emails[i].name + '" <' + req.body.emails[i].address + '>'
+      if ((i+1) !== req.body.emails.length) toString += ', '
+      clientName = req.body.emails[i].name
+    }
+  }
+  let dateRangeString = ""
+  let startDate = moment(req.body.startDate, "YYYY-MM-DD")
+  let endDate = moment(req.body.endDate, "YYYY-MM-DD")
+  if (startDate.year() === endDate.year()) {
+    dateRangeString += startDate.format("MMM D") + " – "
+  } else {
+    dateRangeString += startDate.format("MMM D, YYYY") + " – "
+  }
+  if (startDate.month() === endDate.month()) {
+    dateRangeString += endDate.format("D, YYYY")
+  } else {
+    dateRangeString += endDate.format("MMM D, YYYY")
+  }
+  const subject = 'Childcare summary for '+dateRangeString
+  const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
+  
+  const gmail = google.gmail({version: 'v1', auth})
+  const messageParts = [
+    'From: '+config.name+' <'+config.email+'>',
+     toString,
+    'Content-Type: text/html; charset=utf-8',
+    'MIME-Version: 1.0',
+    `Subject: ${utf8Subject}`,
+    '',
+    '<p>Hi '+clientName+',</p>',
+    '<p>Here\'s the childcare summary for '+dateRangeString+":</p>",
+    '<p style="font-family: Consolas, Monaco, monospace; white-space: pre;" id=invoiceTable>'+req.body.table+'</p>',
+    '<p>Best,</p>',
+    '<p>Lillie</p>'
+  ];
+  //return console.log(messageParts) // DEBUGGING
+  const message = messageParts.join('\n');
+  const encodedMessage = Buffer.from(message)
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+    let draft = gmail.users.drafts.create({
+    userId: 'me',
+    resource: {
+      message: {
+        raw: encodedMessage
+      }
+    }
+  })
 }
 
 function addClient(req, res, next) {

@@ -62,5 +62,5 @@ typings/
 
 # credentials file
 credentials.json
-token.js
+token.json
 config.js
