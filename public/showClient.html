@@ -10,7 +10,7 @@
 
 <body>
   <main>
-    <h1>Adventurous Invoices</h1>
+    <h1><a href="index.html">Adventurous Invoices</a></h1>
     <h2 id=clientNameH2></h2>
     <p id=emails>Emails: </p>
   
@@ -223,8 +223,8 @@
         amountsTotal = amountsTotal + expenses[i].amount
         eventsText += '<span id=expense'+expenses[i].id+'>'+expensedate.format('ddd MMM DD')+'   '+expensedescription+'     '+expenseamount+'<br/></span>'
       }
+      if ((i+1) === expenses.length) eventsText += "<span>--------------------------------------------------<br/></span>"
     }
-    eventsText += "<span>--------------------------------------------------<br/></span>"
     // Totals line
     eventsText += '<span>                    Total:   '+hoursTotal.toFixed(2).padStart(6, ' ').replace('.00', '   ')+'       $'+amountsTotal.toFixed(2).padStart(7, ' ')+'</span><br/>'
     $("#invoiceTable").html(eventsText)

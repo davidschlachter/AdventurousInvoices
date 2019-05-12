@@ -30,6 +30,14 @@
 </body>
 
 <script>
+  rawClients = {}
+
+  function sortClients(a, b) {
+    if (a.client > b.client) return -1;
+    if (a.client < b.client) return 1;
+    return 0;
+  }
+
   $( document ).ready(function() {
     
     $.get("getAuth", function(auth) {
@@ -38,8 +46,10 @@
         $("#errors").show()
       }
     })
-    
-    $.get("getClients", function(results) {
+   
+    $.get("getClients", function(rawresults) {
+      rawClients = rawresults
+      results = rawresults.sort(sortClients)
       let tableText = ""
       let currentClient = ""
       let currentrowSpan = 0
