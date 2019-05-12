@@ -234,8 +234,17 @@
     let a = moment()
     let sunday = a.clone().weekday(0)
     let oneweekago = sunday.clone().subtract(1, 'week')
+    let twoweekago = sunday.clone().subtract(2, 'week')
     let calendarString = ""
-    calendarString += "Su Mo Tu We Th Fr Sa<br>"
+    calendarString += "<i>Su Mo Tu We Th Fr Sa</i><br>"
+    calendarString += 
+      twoweekago.format("DD") + " " +
+      twoweekago.clone().add(1, 'day').format("DD") + " " +
+      twoweekago.clone().add(2, 'day').format("DD") + " " +
+      twoweekago.clone().add(3, 'day').format("DD") + " " +
+      twoweekago.clone().add(4, 'day').format("DD") + " " +
+      twoweekago.clone().add(5, 'day').format("DD") + " " +
+      twoweekago.clone().add(6, 'day').format("DD") + "<br>"
     calendarString += 
       oneweekago.format("DD") + " " +
       oneweekago.clone().add(1, 'day').format("DD") + " " +
@@ -252,6 +261,7 @@
       sunday.clone().add(4, 'day').format("DD") + " " +
       sunday.clone().add(5, 'day').format("DD") + " " +
       sunday.clone().add(6, 'day').format("DD")
+    calendarString = calendarString.replace(a.format("DD"), "<b>"+a.format("DD")+"</b>")
     return calendarString
   }
   
