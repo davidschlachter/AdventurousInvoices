@@ -9,6 +9,7 @@ const readline = require('readline')
 const {google} = require('googleapis')
 const mysql = require('mysql')
 const moment = require('moment')
+const multer = require('multer')
 
 const config = require('./config')
 
@@ -22,6 +23,8 @@ app.use(cookieParser())
 app.use(bodyParser.json())
 app.use( bodyParser.urlencoded({ extended: true }) )
 app.use(express.static(path.join(__dirname, 'public')))
+app.use(multer)
+const upload = multer({ dest: 'receipts/' })
 
 const connection = mysql.createConnection({
   host     : config.mysql.host,
@@ -38,6 +41,7 @@ connection.query('CREATE TABLE IF NOT EXISTS clients (id int auto_increment not 
 connection.query('CREATE TABLE IF NOT EXISTS emails (id int auto_increment not null, client int not null, address varchar(256) character set utf8mb4 not null, primary key (id))', function (error) {
   if (error) throw error;
 });
+connection.query('CREATE TABLE IF NOT EXISTS expenses (id int auto_increment not null, client int not null, date date not null, description varchar(256) character set utf8mb4 not null, amount decimal(6,2) not null, filepath varchar(256) character set utf8mb4, primary key (id))', function (error) {if (error) throw error;});
 
 // Load the auth token
 const auth = getAuth()
@@ -65,6 +69,8 @@ router.get('/getClient', function(req, res, next) {
 router.post('/addClient', bodyParser.urlencoded({ extended: false }), addClient)
 router.post('/newInvoice', bodyParser.urlencoded({ extended: true }), newInvoice)
 router.get('/getEvents', bodyParser.urlencoded({ extended: false }), getEvents)
+router.post('/newexpense', upload.single('receipt'), newExpense)
+router.get('/getexpenses', getExpenses)
 
 function getAuth() {
   let content = fs.readFileSync('credentials.json','utf8')
@@ -126,6 +132,40 @@ function listEvents(req, res, next) {
     orderBy: 'startTime',
   })
   res.json(a.items)
+}
+
+function newExpense(req, res, next) {
+  console.log("newExpense req:", req.body)
+  
+  let date = moment(req.body.date, "YYYY-MM-DD")
+  let description = req.body.description
+  let amount = req.body.amount
+  let client = req.body.client
+  let filename = ""
+  if (typeof req.file !== "undefined") {
+    if (typeof req.file.filename !== "undefined") {
+      filename = req.file.filename
+      connection.query('INSERT INTO expenses SET ?', {client: client, date: date.format('YYYY-MM-DD'), description: description, amount: amount, filepath: filename}, function (error, results, fields) {
+        if (error) throw error
+        res.sendStatus(200)
+      })
+    }
+  } else {
+    connection.query('INSERT INTO expenses SET ?', {client: client, date: date.format('YYYY-MM-DD'), description: description, amount: amount}, function (error, results, fields) {
+      if (error) throw error
+      res.sendStatus(200)
+    })
+  }
+  
+}
+
+function getExpenses(req, res, next) {
+  console.log(req.query)
+  connection.query('SELECT * FROM expenses WHERE client = '+req.query.clientID+';', function (error, results, fields) {
+    if (error) throw error
+    console.log(results)
+    res.json(results)
+  })
 }
 
 function newInvoice(req, res, next) {

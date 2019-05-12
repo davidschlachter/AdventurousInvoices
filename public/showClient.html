@@ -21,10 +21,29 @@
     <input id=enddate type="date"><br>
 
     <p id=invoiceTable></p>
-  
+    
     <div style="text-align:center;">
       <button id=newinvoice type="button">Send to Drafts folder</button>
     </div>
+    
+    <h3>Expenses</h3>
+    
+    <h4>New expense</h4>
+    
+    <form id=newexpenseform enctype="multipart/form-data">
+      Date:
+      <input id=expdate name=dateRaw type="date"><br>
+      Description:
+      <input id=expdescr name=description type=text><br>
+      Amount:
+      <input id=expamt name=amount type=number min=0 step=0.01><br>
+      Receipt:
+      <input id=expfile name=receipt type=file accept="image/png,image/jpeg,.jpg,.jpeg">
+      <div style="text-align:center;">
+        <button id=newexpensesubmit type="button">Add expense</button>
+      </div>
+    </form>
+    
     <h2>Previous invoices</h2>
   
   </main>
@@ -35,6 +54,8 @@
   const clientID = urlParams.get('clientID')
   let client = {}
   let feeRate = 16.0
+  
+  getExpenses()
   
   $( document ).ready(function() {
     
@@ -69,6 +90,11 @@
       newInvoice()
     })
     
+    $('#newexpensesubmit').on('click', function () {
+      $("#newexpensesubmit").attr("disabled", true)
+      newExpense()
+    })
+    
   })
   
   function getEvents(startDate, endDate) {
@@ -96,7 +122,42 @@
     })
   }
   
+  function newExpense() {
+    // https://stackoverflow.com/a/8758614/3380815
+    let formData = new FormData($('#newexpenseform')[0])
+    formData.append('client', clientID)
+    formData.append('date', $("#expdate").val() )
+    $.ajax({
+      url: 'newexpense',
+      type: 'POST',
+      data: formData,
+      // Tell jQuery not to process data or worry about content-type
+      cache: false,
+      contentType: false,
+      processData: false,
+      success: function(data) {
+        console.log(data)
+      }
+    }).done(function(){
+      $("#newexpensesubmit").attr("disabled", false)
+      $('#newexpenseform')[0].reset()
+      getExpenses()
+    }).fail(function(){
+      console.log("An error occurred, the data couldn't be sent!")
+    })
+  }
+  
+  function getExpenses() {
+    $.get("getexpenses?clientID="+clientID, function(res) {
+      expenses = res
+      console.log(res)
+      getEvents($("#startdate").val(), $("#enddate").val())
+    })
+  }
+  
   function showEvents(events) {
+    let queryStartDate = moment($("#startdate").val())
+    let queryEndDate = moment($("#enddate").val())
     let eventsText  = '<span className="summaryHead">Date         Hours           Time (h)  Amount</span><br/>'
     eventsText += '<span>--------------------------------------------------<br/></span>'
     let amountsTotal = 0
@@ -139,10 +200,23 @@
         amount = amount.replace('.00', '   ')
         amountsTotal = amountsTotal + amountNumber
         hoursTotal = hoursTotal + (amountNumber / feeRate)
-        eventsText += '<span id='+events[i].eventId+'>'+start.format('ddd MMM DD')+'   '+startHour+' – '+endTime+'   '+time+'       '+amount+'<br/></span>'
+        eventsText += '<span id=event'+events[i].eventId+'>'+start.format('ddd MMM DD')+'   '+startHour+' – '+endTime+'   '+time+'       '+amount+'<br/></span>'
       }
     }
     eventsText += "<span>--------------------------------------------------<br/></span>"
+    // Process expenses
+    for (let i=0; i<expenses.length; i++) {
+      expensedate = new moment(expenses[i].date)
+      if (expensedate.isSameOrAfter(queryStartDate) && expensedate.isSameOrBefore(queryEndDate)) {
+        expensedescription = expenses[i].description.padEnd(24, ' ')
+        expenseamount = "$ " + expenses[i].amount.toFixed(2).padStart(6, ' ').replace('.00', '   ')
+        
+        amountsTotal = amountsTotal + expenses[i].amount
+        eventsText += '<span id=expense'+expenses[i].id+'>'+expensedate.format('ddd MMM DD')+'   '+expensedescription+'     '+expenseamount+'<br/></span>'
+      }
+    }
+    eventsText += "<span>--------------------------------------------------<br/></span>"
+    // Totals line
     eventsText += '<span>                    Total:   '+hoursTotal.toFixed(2).padStart(6, ' ').replace('.00', '   ')+'       $'+amountsTotal.toFixed(2).padStart(7, ' ')+'</span><br/>'
     $("#invoiceTable").html(eventsText)
   }

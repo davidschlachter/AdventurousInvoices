@@ -64,3 +64,4 @@ typings/
 credentials.json
 token.json
 config.js
+receipts/
