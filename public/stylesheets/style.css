@@ -28,7 +28,14 @@ a {
 	padding: 1em;
 }
 
-table {
+#calendarBox {
+	font-family: Consolas, Monaco, monospace;
+	white-space: pre;
+	font-size: 80%;
+	padding-left: 2em;
+}
+
+#clientsTable {
 	border-collapse: collapse;
 	border-bottom: 1px solid gray;
 }

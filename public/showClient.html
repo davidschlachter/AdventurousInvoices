@@ -17,8 +17,15 @@
     <table id=clientsTable></table>
 
     <h3>Events between:</h3>
-    <input id=startdate type="date"><br>
-    <input id=enddate type="date"><br>
+    <table id=dateselectorbox>
+      <tr>
+        <td>
+          <input id=startdate type="date"><br>
+          <input id=enddate type="date">
+        </td>
+        <td id=calendarBox></td>
+      </tr>
+    </table>
 
     <p id=invoiceTable></p>
     
@@ -94,6 +101,8 @@
       $("#newexpensesubmit").attr("disabled", true)
       newExpense()
     })
+    
+    $("#calendarBox").html( makeCalendar() )
     
   })
   
@@ -219,6 +228,31 @@
     // Totals line
     eventsText += '<span>                    Total:   '+hoursTotal.toFixed(2).padStart(6, ' ').replace('.00', '   ')+'       $'+amountsTotal.toFixed(2).padStart(7, ' ')+'</span><br/>'
     $("#invoiceTable").html(eventsText)
+  }
+  
+  function makeCalendar() {
+    let a = moment()
+    let sunday = a.clone().weekday(0)
+    let oneweekago = sunday.clone().subtract(1, 'week')
+    let calendarString = ""
+    calendarString += "Su Mo Tu We Th Fr Sa<br>"
+    calendarString += 
+      oneweekago.format("DD") + " " +
+      oneweekago.clone().add(1, 'day').format("DD") + " " +
+      oneweekago.clone().add(2, 'day').format("DD") + " " +
+      oneweekago.clone().add(3, 'day').format("DD") + " " +
+      oneweekago.clone().add(4, 'day').format("DD") + " " +
+      oneweekago.clone().add(5, 'day').format("DD") + " " +
+      oneweekago.clone().add(6, 'day').format("DD") + "<br>"
+    calendarString +=
+      sunday.format("DD") + " " +
+      sunday.clone().add(1, 'day').format("DD") + " " +
+      sunday.clone().add(2, 'day').format("DD") + " " +
+      sunday.clone().add(3, 'day').format("DD") + " " +
+      sunday.clone().add(4, 'day').format("DD") + " " +
+      sunday.clone().add(5, 'day').format("DD") + " " +
+      sunday.clone().add(6, 'day').format("DD")
+    return calendarString
   }
   
 </script>
