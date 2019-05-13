@@ -40,6 +40,20 @@ a {
 	border-bottom: 1px solid gray;
 }
 
+#expensestable {
+	font-size: 100%;
+	
+}
+#expensestable td {
+	padding-right: 1em;
+}
+.amount {
+	text-align: right;
+}
+.thleft {
+	text-align: left;
+}
+
 .clientFirstRow > td {
 	border-top: 1px solid gray;
 	padding: 0.3em;

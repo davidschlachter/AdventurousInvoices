@@ -59,15 +59,16 @@ router.get('/getAuth', function(req, res, next) {
 router.get('/getClients', function(req, res, next) {
   connection.query('SELECT * FROM clients JOIN emails ON clients.id = emails.client', function (error, results, fields) {
     if (error) throw error
-      res.json(results)
+    res.json(results)
   })
 })
 router.get('/getClient', function(req, res, next) {
   connection.query('SELECT * FROM clients JOIN emails ON clients.id = emails.client WHERE client = '+req.query.clientID+';', function (error, results, fields) {
     if (error) throw error
-      res.json(results)
+    res.json(results)
   })
 })
+router.post('/deleteExpense', bodyParser.urlencoded({ extended: false }), deleteExpense)
 router.post('/addClient', bodyParser.urlencoded({ extended: false }), addClient)
 router.post('/newInvoice', bodyParser.urlencoded({ extended: true }), newInvoice)
 router.get('/getEvents', bodyParser.urlencoded({ extended: false }), getEvents)
@@ -159,7 +160,16 @@ function newExpense(req, res, next) {
       res.sendStatus(200)
     })
   }
-  
+}
+
+function deleteExpense(req, res, next) {
+  console.log("deleteExpense:", req.body)
+  console.log(parseInt(req.body.id), typeof parseInt(req.body.id))
+  if (typeof parseInt(req.body.id) !== 'number') return res.sendStatus(500)
+  connection.query('DELETE FROM expenses WHERE id = '+req.body.id+';', function (error, results, fields) {
+    if (error) throw error
+    res.sendStatus(200)
+  })
 }
 
 function getExpenses(req, res, next) {

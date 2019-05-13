@@ -51,6 +51,9 @@
       </div>
     </form>
     
+    <h4>All expenses:</h4>
+    <div id=expenseslist></div>
+    
     <h2>Previous invoices</h2>
   
   </main>
@@ -164,7 +167,33 @@
     $.get("getexpenses?clientID="+clientID, function(res) {
       expenses = res
       console.log(res)
+      expensesString = "<table id=expensestable>"
+      expensesString += "<tr><th class=thleft>Date</th><th class=thleft>Description</th><th>Amount</th><th></th></tr>"
+      for (let i=0; i<res.length; i++) {
+        expensesString += "<tr>"
+        expensesString += "<td>"+moment(res[i].date).format('ddd MMM DD')+"</td>"
+        expensesString += "<td>"+res[i].description+"</td>"
+        expensesString += "<td class=amount>"+res[i].amount.toFixed(2)+"</td>"
+        expensesString += '<td><a href="#" onclick="deleteExpense('+res[i].id+'); return false;">Delete</a></td>'
+        expensesString += "</tr>"
+      }
+      expensesString += "</table>"
+      $("#expenseslist").html(expensesString)
+      
       getEvents($("#startdate").val(), $("#enddate").val())
+    })
+  }
+  
+  function deleteExpense(id) {
+    data = {id: id}
+    $.ajax({
+      url: 'deleteExpense',
+      type: 'POST',
+      data: data
+    }).done(function(){
+      getExpenses()
+    }).fail(function(){
+      console.log("An error occurred, the data couldn't be sent!")
     })
   }
   
