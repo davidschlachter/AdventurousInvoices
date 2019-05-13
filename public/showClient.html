@@ -45,7 +45,7 @@
       Amount:
       <input id=expamt name=amount type=number min=0 step=0.01><br>
       Receipt:
-      <input id=expfile name=receipt type=file accept="image/png,image/jpeg,.jpg,.jpeg">
+      <input id=expfile name=receipt type=file>
       <div style="text-align:center;">
         <button id=newexpensesubmit type="button">Add expense</button>
       </div>
@@ -60,6 +60,8 @@
   const urlParams = new URLSearchParams(window.location.search)
   const clientID = urlParams.get('clientID')
   let client = {}
+  let currentExpenses = []
+  let currentEvents   = []
   let feeRate = 16.0
   
   getExpenses()
@@ -121,6 +123,8 @@
     data.endDate = $("#enddate").val()
     data.emails = client
     data.offset = -(new Date().getTimezoneOffset() / 60)
+    data.events = currentEvents
+    data.expenses = currentExpenses
     $.ajax({
       type: "POST",
       url: "newInvoice",
@@ -165,6 +169,8 @@
   }
   
   function showEvents(events) {
+    currentExpenses = []
+    currentEvents   = []
     let queryStartDate = moment($("#startdate").val())
     let queryEndDate = moment($("#enddate").val())
     let eventsText  = '<span className="summaryHead">Date         Hours           Time (h)  Amount</span><br/>'
@@ -201,6 +207,7 @@
           console.log("Error: couldn't parse date")
           continue
         }
+        currentEvents.push(events[i])
         if (startHour.charAt(0) === '0') startHour = ' ' + startHour.substr(1, startHour.length-1)
         if (endTime.charAt(0) === '0') endTime = ' ' + endTime.substr(1, endTime.length-1)
         rate = "$" + feeRate.toFixed(2)
@@ -217,13 +224,14 @@
     for (let i=0; i<expenses.length; i++) {
       expensedate = new moment(expenses[i].date)
       if (expensedate.isSameOrAfter(queryStartDate) && expensedate.isSameOrBefore(queryEndDate)) {
+        currentExpenses.push(expenses[i])
         expensedescription = expenses[i].description.padEnd(24, ' ')
         expenseamount = "$ " + expenses[i].amount.toFixed(2).padStart(6, ' ').replace('.00', '   ')
         
         amountsTotal = amountsTotal + expenses[i].amount
         eventsText += '<span id=expense'+expenses[i].id+'>'+expensedate.format('ddd MMM DD')+'   '+expensedescription+'     '+expenseamount+'<br/></span>'
       }
-      if ((i+1) === expenses.length) eventsText += "<span>--------------------------------------------------<br/></span>"
+      if ((i+1) === expenses.length && currentExpenses.length > 0) eventsText += "<span>--------------------------------------------------<br/></span>"
     }
     // Totals line
     eventsText += '<span>                    Total:   '+hoursTotal.toFixed(2).padStart(6, ' ').replace('.00', '   ')+'       $'+amountsTotal.toFixed(2).padStart(7, ' ')+'</span><br/>'

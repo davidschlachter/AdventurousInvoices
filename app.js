@@ -10,6 +10,8 @@ const {google} = require('googleapis')
 const mysql = require('mysql')
 const moment = require('moment')
 const multer = require('multer')
+const MailComposer = require('nodemailer/lib/mail-composer')
+const mime = require('mime')
 
 const config = require('./config')
 
@@ -41,7 +43,7 @@ connection.query('CREATE TABLE IF NOT EXISTS clients (id int auto_increment not 
 connection.query('CREATE TABLE IF NOT EXISTS emails (id int auto_increment not null, client int not null, address varchar(256) character set utf8mb4 not null, primary key (id))', function (error) {
   if (error) throw error;
 });
-connection.query('CREATE TABLE IF NOT EXISTS expenses (id int auto_increment not null, client int not null, date date not null, description varchar(256) character set utf8mb4 not null, amount decimal(6,2) not null, filepath varchar(256) character set utf8mb4, primary key (id))', function (error) {if (error) throw error;});
+connection.query('CREATE TABLE IF NOT EXISTS expenses (id int auto_increment not null, client int not null, date date not null, description varchar(256) character set utf8mb4 not null, amount decimal(6,2) not null, filepath varchar(256) character set utf8mb4, mimetype varchar(256) character set utf8mb4, primary key (id))', function (error) {if (error) throw error;});
 
 // Load the auth token
 const auth = getAuth()
@@ -143,9 +145,10 @@ function newExpense(req, res, next) {
   let client = req.body.client
   let filename = ""
   if (typeof req.file !== "undefined") {
-    if (typeof req.file.filename !== "undefined") {
+    if (typeof req.file.filename !== "undefined" && req.file.mimetype !== "undefined") {
       filename = req.file.filename
-      connection.query('INSERT INTO expenses SET ?', {client: client, date: date.format('YYYY-MM-DD'), description: description, amount: amount, filepath: filename}, function (error, results, fields) {
+      mimetype = req.file.mimetype
+      connection.query('INSERT INTO expenses SET ?', {client: client, date: date.format('YYYY-MM-DD'), description: description, amount: amount, filepath: filename, mimetype: mimetype}, function (error, results, fields) {
         if (error) throw error
         res.sendStatus(200)
       })
@@ -170,7 +173,7 @@ function getExpenses(req, res, next) {
 
 function newInvoice(req, res, next) {
   console.log(req.body)
-  let toString = "To: "
+  let toString = ""
   let clientName = ""
   for (let i=0; i<req.body.emails.length; i++) {
     if (typeof req.body.emails[i].address !== "undefined") {
@@ -194,35 +197,54 @@ function newInvoice(req, res, next) {
   }
   const subject = 'Childcare summary for '+dateRangeString
   const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
-  
+
   const gmail = google.gmail({version: 'v1', auth})
-  const messageParts = [
-    'From: '+config.name+' <'+config.email+'>',
-     toString,
-    'Content-Type: text/html; charset=utf-8',
-    'MIME-Version: 1.0',
-    `Subject: ${utf8Subject}`,
-    '',
-    '<p>Hi '+clientName+',</p>',
-    '<p>Here\'s the childcare summary for '+dateRangeString+":</p>",
-    '<p style="font-family: Consolas, Monaco, monospace; white-space: pre;" id=invoiceTable>'+req.body.table+'</p>',
-    '<p>Best,</p>',
-    '<p>Lillie</p>'
-  ];
-  //return console.log(messageParts) // DEBUGGING
-  const message = messageParts.join('\n');
-  const encodedMessage = Buffer.from(message)
-    .toString('base64')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
-    let draft = gmail.users.drafts.create({
-    userId: 'me',
-    resource: {
-      message: {
-        raw: encodedMessage
+    
+  //NEW
+  let mailHtml = '<p>Hi '+clientName+',</p><p>Here\'s the childcare summary for '+dateRangeString+':</p><p style="font-family: Consolas, Monaco, monospace; white-space: pre;" id=invoiceTable>'+req.body.table+'</p><p>Best,</p><p>Lillie</p>'
+  let mailText = mailHtml.replace(/<(?:.|\n)*?>/gm, '')
+  let attachments = []
+  let thisAttachment = {}
+  if (typeof req.body.expenses === "object") {
+    for (let i = 0; i < req.body.expenses.length; i++) {
+      if (typeof req.body.expenses[i].filepath === 'undefined') continue
+      if (!req.body.expenses[i].filepath) continue
+      thisAttachment = {
+        filename: req.body.expenses[i].description + "." + mime.getExtension(req.body.expenses[i].mimetype),
+        path: 'receipts/' + req.body.expenses[i].filepath,
+        contentType: req.body.expenses[i].mimetype
       }
+      attachments.push(thisAttachment)
     }
+  }
+  let mail = new MailComposer(
+    {
+      to: toString,
+      text: mailText,
+      html: mailHtml,
+      subject: `${utf8Subject}`,
+      textEncoding: "base64",
+      attachments: attachments
+    })  
+    
+  mail.compile().build( (error, msg) => {
+    if (error) return console.log('Error compiling email ' + error)
+    const encodedMessage = Buffer.from(msg)
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '')
+    gmail.users.drafts.create({
+      userId: 'me',
+      resource: {
+        message: {
+          raw: encodedMessage
+        }
+      }
+    }, (err, result) => {
+      if (err) return console.log('Error creating draft: ', err)
+      console.log("Created draft:", result.data)
+    })
   })
 }
 
