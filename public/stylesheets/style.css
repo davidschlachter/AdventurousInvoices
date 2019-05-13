@@ -42,10 +42,11 @@ a {
 
 #expensestable {
 	font-size: 100%;
-	
+	margin-bottom: 1em;
 }
 #expensestable td {
 	padding-right: 1em;
+	padding-bottom: 0.33em;
 }
 .amount {
 	text-align: right;

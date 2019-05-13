@@ -54,7 +54,7 @@
     <h4>All expenses:</h4>
     <div id=expenseslist></div>
     
-    <h2>Previous invoices</h2>
+    <!--<h2>Previous invoices</h2>-->
   
   </main>
 </body>
@@ -168,12 +168,14 @@
       expenses = res
       console.log(res)
       expensesString = "<table id=expensestable>"
-      expensesString += "<tr><th class=thleft>Date</th><th class=thleft>Description</th><th>Amount</th><th></th></tr>"
+      expensesString += "<tr><th class=thleft>Date</th><th class=thleft>Description</th><th>Amount</th><th></th><th></th></tr>"
       for (let i=0; i<res.length; i++) {
         expensesString += "<tr>"
         expensesString += "<td>"+moment(res[i].date).format('ddd MMM DD')+"</td>"
         expensesString += "<td>"+res[i].description+"</td>"
         expensesString += "<td class=amount>"+res[i].amount.toFixed(2)+"</td>"
+        if (res[i].filepath) expensesString += "<td>&#x1F4CE;</td>"
+        else expensesString += "<td></td>"
         expensesString += '<td><a href="#" onclick="deleteExpense('+res[i].id+'); return false;">Delete</a></td>'
         expensesString += "</tr>"
       }
