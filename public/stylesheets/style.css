@@ -39,6 +39,9 @@ a {
 	border-collapse: collapse;
 	border-bottom: 1px solid gray;
 }
+#clientsTable td {
+	padding: 0.3em;
+}
 
 #expensestable {
 	font-size: 100%;
@@ -57,7 +60,7 @@ a {
 
 .clientFirstRow > td {
 	border-top: 1px solid gray;
-	padding: 0.3em;
+	
 }
 
 button {
