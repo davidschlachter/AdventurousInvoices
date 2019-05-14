@@ -84,9 +84,9 @@
     })
     
     today = moment().weekday(0)
-    $("#enddate").val(today.toISOString().split('T')[0])
-    let twoWeeksAgo = moment().subtract(14, 'day')
-    $("#startdate").val(twoWeeksAgo.toISOString().split('T')[0])
+    $("#enddate").val(today.format("YYYY-MM-DD"))
+    let twoWeeksAgo = today.clone().subtract(13, 'day')
+    $("#startdate").val(twoWeeksAgo.format("YYYY-MM-DD"))
     
     $("#startdate").change(function() {
       getEvents($("#startdate").val(), $("#enddate").val())
@@ -139,8 +139,17 @@
   }
   
   function newExpense() {
+    let form = document.getElementById( 'newexpenseform' )
+    // https://stackoverflow.com/questions/51201011/ios-safari-fails-to-send-form-data-via-ajax/51273135
+    if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('Chrome') == -1) {
+        var $inputs = $('input[type="file"]:not([disabled])', form)
+        $inputs.each(function(_, input) {
+            if (input.files.length > 0) return
+            $(input).prop('disabled', true)
+        })
+    }
     // https://stackoverflow.com/a/8758614/3380815
-    let formData = new FormData($('#newexpenseform')[0])
+    let formData = new FormData(form)
     formData.append('client', clientID)
     formData.append('date', $("#expdate").val() )
     $.ajax({
@@ -150,16 +159,16 @@
       // Tell jQuery not to process data or worry about content-type
       cache: false,
       contentType: false,
-      processData: false,
-      success: function(data) {
-        console.log(data)
-      }
+      processData: false
     }).done(function(){
       $("#newexpensesubmit").attr("disabled", false)
+      $inputs.prop('disabled', false)
       $('#newexpenseform')[0].reset()
       getExpenses()
     }).fail(function(){
       console.log("An error occurred, the data couldn't be sent!")
+      $inputs.prop('disabled', false)
+      $("#newexpensesubmit").attr("disabled", false)
     })
   }
   
