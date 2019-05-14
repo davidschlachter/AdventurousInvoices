@@ -83,9 +83,9 @@
       $("#emails").append(emailAddresses)
     })
     
-    today = new Date()
+    today = moment().weekday(0)
     $("#enddate").val(today.toISOString().split('T')[0])
-    let twoWeeksAgo = new Date(new Date().setDate(today.getDate() - 14))
+    let twoWeeksAgo = moment().subtract(14, 'day')
     $("#startdate").val(twoWeeksAgo.toISOString().split('T')[0])
     
     $("#startdate").change(function() {
