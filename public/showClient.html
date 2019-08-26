@@ -13,7 +13,12 @@
     <h1><a href="index.html">Adventurous Invoices</a></h1>
     <h2 id=clientNameH2></h2>
     <p id=emails>Emails: </p>
-    <p id=ratep>Rate: </p>
+    <p>Rate: <span id=ratep></span> [<a id="changeratebutton">Change rate</a>]</p>
+    <form id=newrateform>
+      <label>New rate: </label>
+      <input id=newrate type="text"><br>
+      <button type=submit>Change</button>
+    </form>
   
     <table id=clientsTable></table>
 
@@ -111,7 +116,29 @@
     })
     
     $("#calendarBox").html( makeCalendar() )
-    
+   
+    $('#changeratebutton').on('click', function () {
+      $('#newrateform').show()
+    })
+    $("#newrateform").submit(function(e) {
+      e.preventDefault()
+      rateData = {}
+      rateData.rate = $("#newrate").val()
+      rateData.client = client[0].client
+      console.log("rateData", rateData)
+      $.ajax({
+        type: "POST",
+        url: "newRate",
+        data: rateData,
+        complete: function() {
+          window.location.href=window.location.protocol+"//"+window.location.host+window.location.pathname+"?clientID="+clientID+"&v="+Math.random()
+        },
+        dataType: "json"
+      })
+    });
+
+
+
   })
   
   function getEvents(startDate, endDate) {

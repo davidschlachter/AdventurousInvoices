@@ -70,6 +70,7 @@ router.get('/getClient', function(req, res, next) {
 })
 router.post('/deleteExpense', bodyParser.urlencoded({ extended: false }), deleteExpense)
 router.post('/addClient', bodyParser.urlencoded({ extended: false }), addClient)
+router.post('/newRate', bodyParser.urlencoded({ extended: false }), newRate)
 router.post('/newInvoice', bodyParser.urlencoded({ extended: true }), newInvoice)
 router.get('/getEvents', bodyParser.urlencoded({ extended: false }), getEvents)
 router.post('/newexpense', upload.single('receipt'), newExpense)
@@ -280,6 +281,30 @@ function addClient(req, res, next) {
         })
       }
     }
+  })
+}
+
+function newRate(req, res, next) {
+  console.log("newRate body:")
+  console.log(req.body)
+  rate = parseFloat(req.body.rate)
+  clientid = parseInt(req.body.client)
+  console.log("rate:", rate)
+  if (!Number.isInteger(clientid)) {
+    console.log("ERROR: client id is not a number")
+    return res.sendStatus(500)
+  }
+  if (clientid < 1) {
+    console.log("ERROR: client id is less than 1")
+    return res.sendStatus(500)
+  }
+  connection.query('UPDATE clients SET rate = ? WHERE id = ?', [rate, clientid], function (error, results, fields) {
+    if (error) throw error
+    console.log("Done setting new rate")
+    console.log(error)
+    console.log(results)
+    console.log(fields)
+    res.sendStatus(200)
   })
 }
 

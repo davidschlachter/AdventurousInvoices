@@ -68,3 +68,9 @@ button {
 	padding: .3em;
 	margin-top:0.6em;
 }
+
+#newrateform {
+  background-color: rgba(0,0,0,0.1);
+  padding:1em;
+  display:none;
+}
