@@ -37,7 +37,7 @@ const connection = mysql.createConnection({
 connection.connect()
 
 // Create tables if needed
-connection.query('CREATE TABLE IF NOT EXISTS clients (id int auto_increment not null, name varchar(256) character set utf8mb4 not null, primary key (id))', function (error) {
+connection.query('CREATE TABLE IF NOT EXISTS clients (id int auto_increment not null, name varchar(256) character set utf8mb4 not null, rate decimal(6,2), primary key (id))', function (error) {
   if (error) throw error;
 });
 connection.query('CREATE TABLE IF NOT EXISTS emails (id int auto_increment not null, client int not null, address varchar(256) character set utf8mb4 not null, primary key (id))', function (error) {
@@ -264,7 +264,7 @@ function addClient(req, res, next) {
   for (let i=0; i<req.body['emails[]'].length; i++) {
     console.log("email", req.body['emails[]'][i])
   }
-  connection.query('INSERT INTO clients SET ?', {name: req.body.name}, function (error, results, fields) {
+  connection.query('INSERT INTO clients SET ?', {name: req.body.name, rate: req.body.rate}, function (error, results, fields) {
     if (error) throw error
     let clientID = results.insertId
     if (typeof req.body['emails[]'] === "string") {

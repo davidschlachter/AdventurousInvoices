@@ -13,6 +13,7 @@
     <h1><a href="index.html">Adventurous Invoices</a></h1>
     <h2 id=clientNameH2></h2>
     <p id=emails>Emails: </p>
+    <p id=ratep>Rate: </p>
   
     <table id=clientsTable></table>
 
@@ -65,7 +66,7 @@
   let client = {}
   let currentExpenses = []
   let currentEvents   = []
-  let feeRate = 16.0
+  let feeRate = 16.0 // default rate if not specified
   
   getExpenses()
   
@@ -76,11 +77,13 @@
       client = res
       $("#clientNameH2").text(client[0].name)
       let emailAddresses = ""
+      feeRate = client[0].rate
       for (let i=0;i<client.length;i++) {
         emailAddresses += client[i].address
         if ((i+1) !== client.length) emailAddresses += ", "
       }
       $("#emails").append(emailAddresses)
+      $("#ratep").append(feeRate)
     })
     
     today = moment().weekday(0)
