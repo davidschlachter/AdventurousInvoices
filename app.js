@@ -321,6 +321,7 @@ function getEvents(req, res, next) {
     timeMax: endDate.toISOString(),
     singleEvents: true,
     orderBy: 'startTime',
+    maxResults: 2500 // the upper limit for the API as of Dec 2019
   }).then(function(response){
     res.json(response.data.items)
   })
