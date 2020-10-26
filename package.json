@@ -10,7 +10,7 @@
     "cookie-parser": "~1.4.3",
     "debug": "~2.6.9",
     "express": "~4.16.0",
-    "googleapis": "^39.2.0",
+    "googleapis": "^61.0.0",
     "mime": "^2.4.2",
     "moment": "^2.24.0",
     "morgan": "~1.9.0",
