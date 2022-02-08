@@ -2,6 +2,12 @@ let config = {}
 
 config.name = "My Name"
 config.email = "my@email.address"
+config.imap = {}
+config.imap.user = "my@email.address"
+config.imap.password = "password"
+config.imap.server = "imap.domain.tld"
+config.imap.port = 993
+config.imap.tls = true
 config.mysql = {}
 config.mysql.host = '192.168.4.228'
 config.mysql.user = 'invoices'

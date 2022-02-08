@@ -28,6 +28,15 @@ app.use(express.static(path.join(__dirname, 'public')))
 app.use(multer)
 const upload = multer({ dest: 'receipts/' })
 
+var Imap = require('imap'), inspect = require('util').inspect;
+var imap = new Imap({
+  user: config.imap.user,
+  password: config.imap.password,
+  host: config.imap.server,
+  port: config.imap.port,
+  tls: config.imap.tls
+});
+
 const connection = mysql.createConnection({
   host: config.mysql.host,
   user: config.mysql.user,
@@ -209,9 +218,6 @@ function newInvoice(req, res, next) {
   const subject = 'Childcare summary for ' + dateRangeString
   const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
 
-  const gmail = google.gmail({ version: 'v1', auth })
-
-  //NEW
   let mailHtml = '<p>Hi ' + clientName + ',</p><p>Here\'s the childcare summary for ' + dateRangeString + ':</p><p style="font-family: Consolas, Monaco, monospace; white-space: pre;" id=invoiceTable>' + req.body.table + '</p><p>Best,</p><p>Lillie</p>'
   let mailText = mailHtml.replace(/<(?:.|\n)*?>/gm, '')
   let attachments = []
@@ -241,21 +247,35 @@ function newInvoice(req, res, next) {
   mail.compile().build((error, msg) => {
     if (error) return console.log('Error compiling email ' + error)
     const encodedMessage = Buffer.from(msg)
-      .toString('base64')
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '')
-    gmail.users.drafts.create({
-      userId: 'me',
-      resource: {
-        message: {
-          raw: encodedMessage
-        }
-      }
-    }, (err, result) => {
-      if (err) return console.log('Error creating draft: ', err)
-      console.log("Created draft:", result.data)
+
+    function openDrafts(cb) {
+      imap.openBox('Drafts', true, cb);
+    }
+    imap.once('ready', function () {
+      console.log("IMAP connection ready")
+      openDrafts(function (err, box) {
+        if (err) console.log(err)
+        imap.append(encodedMessage, {
+          flags: ['Seen', 'Draft']
+        }, function (err) {
+          if (err) {
+            console.log("Failed to append draft:", err)
+          } else {
+            console.log("Created draft")
+          }
+          imap.end()
+        })
+      })
     })
+    imap.once('error', function (err) {
+      console.log("IMAP connection error:", err);
+      imap.end();
+    });
+    imap.once('end', function () {
+      console.log('IMAP connection ended');
+    });
+    imap.connect();
+
   })
 }
 
