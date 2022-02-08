@@ -6,7 +6,7 @@ const bodyParser = require('body-parser')
 const logger = require('morgan')
 const fs = require('fs')
 const readline = require('readline')
-const {google} = require('googleapis')
+const { google } = require('googleapis')
 const mysql = require('mysql')
 const moment = require('moment')
 const multer = require('multer')
@@ -23,16 +23,25 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 app.use(cookieParser())
 app.use(bodyParser.json())
-app.use( bodyParser.urlencoded({ extended: true }) )
+app.use(bodyParser.urlencoded({ extended: true }))
 app.use(express.static(path.join(__dirname, 'public')))
 app.use(multer)
 const upload = multer({ dest: 'receipts/' })
 
+var Imap = require('imap'), inspect = require('util').inspect;
+var imap = new Imap({
+  user: config.imap.user,
+  password: config.imap.password,
+  host: config.imap.server,
+  port: config.imap.port,
+  tls: config.imap.tls
+});
+
 const connection = mysql.createConnection({
-  host     : config.mysql.host,
-  user     : config.mysql.user,
-  password : config.mysql.password,
-  database : config.mysql.database
+  host: config.mysql.host,
+  user: config.mysql.user,
+  password: config.mysql.password,
+  database: config.mysql.database
 })
 connection.connect()
 
@@ -43,27 +52,27 @@ connection.query('CREATE TABLE IF NOT EXISTS clients (id int auto_increment not 
 connection.query('CREATE TABLE IF NOT EXISTS emails (id int auto_increment not null, client int not null, address varchar(256) character set utf8mb4 not null, primary key (id))', function (error) {
   if (error) throw error;
 });
-connection.query('CREATE TABLE IF NOT EXISTS expenses (id int auto_increment not null, client int not null, date date not null, description varchar(256) character set utf8mb4 not null, amount decimal(6,2) not null, filepath varchar(256) character set utf8mb4, mimetype varchar(256) character set utf8mb4, primary key (id))', function (error) {if (error) throw error;});
+connection.query('CREATE TABLE IF NOT EXISTS expenses (id int auto_increment not null, client int not null, date date not null, description varchar(256) character set utf8mb4 not null, amount decimal(6,2) not null, filepath varchar(256) character set utf8mb4, mimetype varchar(256) character set utf8mb4, primary key (id))', function (error) { if (error) throw error; });
 
 // Load the auth token
 const auth = getAuth()
 
 // Routes
-router.get('/getAuth', function(req, res, next) {
-  if(typeof auth !== "undefined") {
-    res.json({"authenticated": true})
+router.get('/getAuth', function (req, res, next) {
+  if (typeof auth !== "undefined") {
+    res.json({ "authenticated": true })
   } else {
-    res.json({"authenticated": false})
+    res.json({ "authenticated": false })
   }
 })
-router.get('/getClients', function(req, res, next) {
+router.get('/getClients', function (req, res, next) {
   connection.query('SELECT * FROM clients JOIN emails ON clients.id = emails.client', function (error, results, fields) {
     if (error) throw error
     res.json(results)
   })
 })
-router.get('/getClient', function(req, res, next) {
-  connection.query('SELECT * FROM clients JOIN emails ON clients.id = emails.client WHERE client = '+req.query.clientID+';', function (error, results, fields) {
+router.get('/getClient', function (req, res, next) {
+  connection.query('SELECT * FROM clients JOIN emails ON clients.id = emails.client WHERE client = ' + req.query.clientID + ';', function (error, results, fields) {
     if (error) throw error
     res.json(results)
   })
@@ -77,14 +86,14 @@ router.post('/newexpense', upload.single('receipt'), newExpense)
 router.get('/getexpenses', getExpenses)
 
 function getAuth() {
-  let content = fs.readFileSync('credentials.json','utf8')
+  let content = fs.readFileSync('credentials.json', 'utf8')
   return authorize(JSON.parse(content))
 }
 
 function authorize(credentials) {
-  const {client_secret, client_id, redirect_uris} = credentials.installed
+  const { client_secret, client_id, redirect_uris } = credentials.installed
   const oAuth2Client = new google.auth.OAuth2(
-      client_id, client_secret, redirect_uris[0])
+    client_id, client_secret, redirect_uris[0])
   // New authorization, just uncomment to use (hacky!)
   //const authUrl = oAuth2Client.generateAuthUrl({
   //    access_type: 'offline',
@@ -94,7 +103,7 @@ function authorize(credentials) {
   // Check if we have previously stored a token.
   let token = {}
   try {
-    token = fs.readFileSync('token.json','utf8')
+    token = fs.readFileSync('token.json', 'utf8')
   } catch {
     return getAccessToken(oAuth2Client)
   }
@@ -127,7 +136,7 @@ function getAccessToken(oAuth2Client) {
 }
 
 function listEvents(req, res, next) {
-  const calendar = google.calendar({version: 'v3', auth})
+  const calendar = google.calendar({ version: 'v3', auth })
   let a = calendar.events.list({
     calendarId: 'primary',
     timeMin: (new Date()).toISOString(),
@@ -140,7 +149,7 @@ function listEvents(req, res, next) {
 
 function newExpense(req, res, next) {
   console.log("newExpense req:", req.body)
-  
+
   let date = moment(req.body.date, "YYYY-MM-DD")
   let description = req.body.description
   let amount = req.body.amount
@@ -150,13 +159,13 @@ function newExpense(req, res, next) {
     if (typeof req.file.filename !== "undefined" && req.file.mimetype !== "undefined") {
       filename = req.file.filename
       mimetype = req.file.mimetype
-      connection.query('INSERT INTO expenses SET ?', {client: client, date: date.format('YYYY-MM-DD'), description: description, amount: amount, filepath: filename, mimetype: mimetype}, function (error, results, fields) {
+      connection.query('INSERT INTO expenses SET ?', { client: client, date: date.format('YYYY-MM-DD'), description: description, amount: amount, filepath: filename, mimetype: mimetype }, function (error, results, fields) {
         if (error) throw error
         res.sendStatus(200)
       })
     }
   } else {
-    connection.query('INSERT INTO expenses SET ?', {client: client, date: date.format('YYYY-MM-DD'), description: description, amount: amount}, function (error, results, fields) {
+    connection.query('INSERT INTO expenses SET ?', { client: client, date: date.format('YYYY-MM-DD'), description: description, amount: amount }, function (error, results, fields) {
       if (error) throw error
       res.sendStatus(200)
     })
@@ -167,7 +176,7 @@ function deleteExpense(req, res, next) {
   console.log("deleteExpense:", req.body)
   console.log(parseInt(req.body.id), typeof parseInt(req.body.id))
   if (typeof parseInt(req.body.id) !== 'number') return res.sendStatus(500)
-  connection.query('DELETE FROM expenses WHERE id = '+req.body.id+';', function (error, results, fields) {
+  connection.query('DELETE FROM expenses WHERE id = ' + req.body.id + ';', function (error, results, fields) {
     if (error) throw error
     res.sendStatus(200)
   })
@@ -175,7 +184,7 @@ function deleteExpense(req, res, next) {
 
 function getExpenses(req, res, next) {
   console.log(req.query)
-  connection.query('SELECT * FROM expenses WHERE client = '+req.query.clientID+';', function (error, results, fields) {
+  connection.query('SELECT * FROM expenses WHERE client = ' + req.query.clientID + ';', function (error, results, fields) {
     if (error) throw error
     console.log(results)
     res.json(results)
@@ -186,10 +195,10 @@ function newInvoice(req, res, next) {
   console.log(req.body)
   let toString = ""
   let clientName = ""
-  for (let i=0; i<req.body.emails.length; i++) {
+  for (let i = 0; i < req.body.emails.length; i++) {
     if (typeof req.body.emails[i].address !== "undefined") {
       toString += '<' + req.body.emails[i].address + '>'
-      if ((i+1) !== req.body.emails.length) toString += ', '
+      if ((i + 1) !== req.body.emails.length) toString += ', '
       clientName = req.body.emails[i].name
     }
   }
@@ -206,13 +215,10 @@ function newInvoice(req, res, next) {
   } else {
     dateRangeString += endDate.format("MMM D, YYYY")
   }
-  const subject = 'Childcare summary for '+dateRangeString
+  const subject = 'Childcare summary for ' + dateRangeString
   const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
 
-  const gmail = google.gmail({version: 'v1', auth})
-    
-  //NEW
-  let mailHtml = '<p>Hi '+clientName+',</p><p>Here\'s the childcare summary for '+dateRangeString+':</p><p style="font-family: Consolas, Monaco, monospace; white-space: pre;" id=invoiceTable>'+req.body.table+'</p><p>Best,</p><p>Lillie</p>'
+  let mailHtml = '<p>Hi ' + clientName + ',</p><p>Here\'s the childcare summary for ' + dateRangeString + ':</p><p style="font-family: Consolas, Monaco, monospace; white-space: pre;" id=invoiceTable>' + req.body.table + '</p><p>Best,</p><p>Lillie</p>'
   let mailText = mailHtml.replace(/<(?:.|\n)*?>/gm, '')
   let attachments = []
   let thisAttachment = {}
@@ -236,46 +242,60 @@ function newInvoice(req, res, next) {
       subject: `${utf8Subject}`,
       textEncoding: "base64",
       attachments: attachments
-    })  
-    
-  mail.compile().build( (error, msg) => {
+    })
+
+  mail.compile().build((error, msg) => {
     if (error) return console.log('Error compiling email ' + error)
     const encodedMessage = Buffer.from(msg)
-      .toString('base64')
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '')
-    gmail.users.drafts.create({
-      userId: 'me',
-      resource: {
-        message: {
-          raw: encodedMessage
-        }
-      }
-    }, (err, result) => {
-      if (err) return console.log('Error creating draft: ', err)
-      console.log("Created draft:", result.data)
+
+    function openDrafts(cb) {
+      imap.openBox('Drafts', true, cb);
+    }
+    imap.once('ready', function () {
+      console.log("IMAP connection ready")
+      openDrafts(function (err, box) {
+        if (err) console.log(err)
+        imap.append(encodedMessage, {
+          flags: ['Seen', 'Draft']
+        }, function (err) {
+          if (err) {
+            console.log("Failed to append draft:", err)
+          } else {
+            console.log("Created draft")
+          }
+          imap.end()
+        })
+      })
     })
+    imap.once('error', function (err) {
+      console.log("IMAP connection error:", err);
+      imap.end();
+    });
+    imap.once('end', function () {
+      console.log('IMAP connection ended');
+    });
+    imap.connect();
+
   })
 }
 
 function addClient(req, res, next) {
   console.log(req.body)
   console.log("name", req.body.name)
-  for (let i=0; i<req.body['emails[]'].length; i++) {
+  for (let i = 0; i < req.body['emails[]'].length; i++) {
     console.log("email", req.body['emails[]'][i])
   }
-  connection.query('INSERT INTO clients SET ?', {name: req.body.name, rate: req.body.rate}, function (error, results, fields) {
+  connection.query('INSERT INTO clients SET ?', { name: req.body.name, rate: req.body.rate }, function (error, results, fields) {
     if (error) throw error
     let clientID = results.insertId
     if (typeof req.body['emails[]'] === "string") {
-      connection.query('INSERT INTO emails SET ?', {client: clientID, address: req.body['emails[]']}, function (error, results, fields) {
+      connection.query('INSERT INTO emails SET ?', { client: clientID, address: req.body['emails[]'] }, function (error, results, fields) {
         if (error) throw error
         res.sendStatus(200)
       })
     } else {
-      for (let i=0; i<req.body['emails[]'].length; i++) {
-        connection.query('INSERT INTO emails SET ?', {client: clientID, address: req.body['emails[]'][i]}, function (error, results, fields) {
+      for (let i = 0; i < req.body['emails[]'].length; i++) {
+        connection.query('INSERT INTO emails SET ?', { client: clientID, address: req.body['emails[]'][i] }, function (error, results, fields) {
           if (error) throw error
           if (i - 1 === req.body['emails[]'].length) res.sendStatus(200)
         })
@@ -309,12 +329,12 @@ function newRate(req, res, next) {
 }
 
 function getEvents(req, res, next) {
-  let startDate = new Date(req.query.startDate+"Z"+req.query.offset)
-  let endDate = new Date(req.query.endDate+"Z"+req.query.offset)
-  
+  let startDate = new Date(req.query.startDate + "Z" + req.query.offset)
+  let endDate = new Date(req.query.endDate + "Z" + req.query.offset)
+
   console.log(req.query)
-  
-  const calendar = google.calendar({version: 'v3', auth})
+
+  const calendar = google.calendar({ version: 'v3', auth })
   let a = calendar.events.list({
     calendarId: 'primary',
     timeMin: startDate.toISOString(),
@@ -322,7 +342,7 @@ function getEvents(req, res, next) {
     singleEvents: true,
     orderBy: 'startTime',
     maxResults: 2500 // the upper limit for the API as of Dec 2019
-  }).then(function(response){
+  }).then(function (response) {
     res.json(response.data.items)
   })
 }
