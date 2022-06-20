@@ -218,7 +218,7 @@ function newInvoice(req, res, next) {
   const subject = 'Childcare summary for ' + dateRangeString
   const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
 
-  let mailHtml = '<p>Hi ' + clientName + ',</p><p>Here\'s the childcare summary for ' + dateRangeString + ':</p><p style="font-family: Consolas, Monaco, monospace; white-space: pre;" id=invoiceTable>' + req.body.table + '</p><p>Best,</p><p>Lillie</p>'
+  let mailHtml = '<p>Hi ' + clientName + ',</p><p>Here\'s the childcare summary for ' + dateRangeString + ':</p><pre>' + req.body.table + '</pre><p>Best,</p><p>Lillie</p>'
   let mailText = mailHtml.replace(/<(?:.|\n)*?>/gm, '')
   let attachments = []
   let thisAttachment = {}
